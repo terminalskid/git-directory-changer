@@ -15,12 +15,11 @@ Easy to customize the default folder
 ### Windows PowerShell
 
 Clone this repository and run the installer
-´´´
-
+```
 git clone https://github.com/terminalskid/git-directory-changer.git  
 cd git-directory-changer  
 .\install.ps1
-´´´
+```
 Restart PowerShell to apply changes  
 
 By default repositories will be cloned into `D:\GitRepos`  
@@ -30,12 +29,12 @@ You can change this folder by editing the `$defaultFolder` variable inside `inst
 
 Clone this repository and run the installer
 
-´´´
+```
 
 git clone https://github.com/terminalskid/git-directory-changer.git  
 cd git-directory-changer  
 bash install.sh
-´´´
+```
 Restart your terminal to apply changes  
 
 By default repositories will be cloned into `~/GitRepos`  
@@ -44,10 +43,10 @@ You can change this folder by editing the `GIT_DEFAULT` variable inside `install
 ## Usage
 
 After installation use the `gclone` command to clone repositories into your default folder
-´´´
+```
 
 gclone https://github.com/username/repo.git
-´´´
+```
 Repositories are automatically cloned into your default folder  
 No need to manually `cd` to the folder every time  
 
