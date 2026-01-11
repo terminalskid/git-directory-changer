@@ -24,4 +24,4 @@ if ! echo "$PATH" | grep -q "$INSTALL_DIR"; then
   echo "export PATH=\$PATH:$INSTALL_DIR" >> "$SHELL_RC"
 fi
 
-echo "Git Location Changer installed with gclone and gloco integrated. Restart your terminal."
+echo "Git Location Changer installed with gclone and gloco. Restart your terminal."
