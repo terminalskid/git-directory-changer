@@ -2,7 +2,6 @@
 import os
 import sys
 import json
-import subprocess
 from pathlib import Path
 
 CONFIG_DIR = Path.home() / ".gitloc"
@@ -36,7 +35,7 @@ def cmd_clone(repo):
         sys.exit(1)
     os.makedirs(base, exist_ok=True)
     os.chdir(base)
-    subprocess.run(["git", "clone", repo])
+    os.system(f"git clone {repo}")
 
 def cmd_reset():
     if CONFIG_FILE.exists():
@@ -45,9 +44,18 @@ def cmd_reset():
     else:
         print("No configuration found")
 
+def cmd_gloco():
+    """Show the current git location folder"""
+    cfg = load_config()
+    base = cfg.get("base_dir")
+    if base:
+        print(f"Your current Git default folder is: {base}")
+    else:
+        print("No Git default folder is set. Use: git loc set <path>")
+
 def main():
     if len(sys.argv) < 2:
-        print("Usage: git loc [set|clone|show|reset|gclone]")
+        print("Usage: git loc [set|clone|gclone|show|reset|gloco]")
         return
 
     action = sys.argv[1].lower()
@@ -56,12 +64,14 @@ def main():
         cmd_set(sys.argv[2])
     elif action == "clone" and len(sys.argv) > 2:
         cmd_clone(sys.argv[2])
+    elif action == "gclone" and len(sys.argv) > 2:
+        cmd_clone(sys.argv[2])
     elif action == "show":
         cmd_show()
     elif action == "reset":
         cmd_reset()
-    elif action == "gclone" and len(sys.argv) > 2:
-        cmd_clone(sys.argv[2])
+    elif action == "gloco":
+        cmd_gloco()
     else:
         print("Unknown command or missing argument")
 
