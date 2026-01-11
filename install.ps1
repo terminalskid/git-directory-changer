@@ -1,22 +1,24 @@
-#!/usr/bin/env bash
+$installDir = "$env:USERPROFILE\.gitloc\bin"
+New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 
-INSTALL_DIR="$HOME/.gitloc/bin"
-mkdir -p "$INSTALL_DIR"
+Copy-Item ".\git-loc.py" "$installDir\git-loc.py" -Force
 
-cp ./git-loc.py "$INSTALL_DIR/git-loc"
-chmod +x "$INSTALL_DIR/git-loc"
+# Batch shim for git-loc
+$shim = "@echo off`npython `"$installDir\git-loc.py`" %*"
+Set-Content "$installDir\git-loc.bat" $shim
 
-# Create gclone wrapper
-echo -e '#!/usr/bin/env bash\npython3 "$HOME/.gitloc/bin/git-loc" gclone "$@"' > "$INSTALL_DIR/gclone"
-chmod +x "$INSTALL_DIR/gclone"
+# Batch shim for gclone
+$gcloneShim = "@echo off`npython `"$installDir\git-loc.py`" gclone %*"
+Set-Content "$installDir\gclone.bat" $gcloneShim
+
+# Batch shim for gloco
+$glocoShim = "@echo off`npython `"$installDir\git-loc.py`" gloco %*"
+Set-Content "$installDir\gloco.bat" $glocoShim
 
 # Add to PATH if missing
-if ! echo "$PATH" | grep -q "$INSTALL_DIR"; then
-  SHELL_RC="$HOME/.bashrc"
-  if [ -n "$ZSH_VERSION" ]; then
-    SHELL_RC="$HOME/.zshrc"
-  fi
-  echo "export PATH=\$PATH:$INSTALL_DIR" >> "$SHELL_RC"
-fi
+$oldPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+if ($oldPath -notlike "*$installDir*") {
+    [Environment]::SetEnvironmentVariable("PATH", "$oldPath;$installDir", "User")
+}
 
-echo "Git Location Changer installed with gclone. Restart your terminal."
+Write-Host "Git Location Changer installed with gclone and gloco. Restart terminal."
