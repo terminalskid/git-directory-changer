@@ -1,6 +1,7 @@
 $installDir = "$env:USERPROFILE\.gitloc\bin"
 New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 
+# Copy git-loc.py
 Copy-Item ".\git-loc.py" "$installDir\git-loc.py" -Force
 
 # Batch shim for git-loc
@@ -15,7 +16,7 @@ Set-Content "$installDir\gclone.bat" $gcloneShim
 $glocoShim = "@echo off`npython `"$installDir\git-loc.py`" gloco %*"
 Set-Content "$installDir\gloco.bat" $glocoShim
 
-# Add to PATH if missing
+# Add installDir to PATH if missing
 $oldPath = [Environment]::GetEnvironmentVariable("PATH", "User")
 if ($oldPath -notlike "*$installDir*") {
     [Environment]::SetEnvironmentVariable("PATH", "$oldPath;$installDir", "User")
