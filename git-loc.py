@@ -47,7 +47,7 @@ def cmd_reset():
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: git loc [set|clone|show|reset]")
+        print("Usage: git loc [set|clone|show|reset|gclone]")
         return
 
     action = sys.argv[1].lower()
@@ -60,6 +60,8 @@ def main():
         cmd_show()
     elif action == "reset":
         cmd_reset()
+    elif action == "gclone" and len(sys.argv) > 2:
+        cmd_clone(sys.argv[2])
     else:
         print("Unknown command or missing argument")
 
