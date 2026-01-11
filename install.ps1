@@ -1,25 +1,34 @@
 $installDir = "$env:USERPROFILE\.gitloc\bin"
 New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 
-# Copy git-loc.py
+# Copy python script
 Copy-Item ".\git-loc.py" "$installDir\git-loc.py" -Force
 
-# Batch shim for git-loc
-$shim = "@echo off`npython `"$installDir\git-loc.py`" %*"
-Set-Content "$installDir\git-loc.bat" $shim
+# Create Windows .bat wrappers
+Set-Content "$installDir\git-loc.bat" "@echo off`npython `"$installDir\git-loc.py`" %*"
+Set-Content "$installDir\gclone.bat" "@echo off`npython `"$installDir\git-loc.py`" gclone %*"
+Set-Content "$installDir\gloco.bat" "@echo off`npython `"$installDir\git-loc.py`" gloco %*"
 
-# Batch shim for gclone
-$gcloneShim = "@echo off`npython `"$installDir\git-loc.py`" gclone %*"
-Set-Content "$installDir\gclone.bat" $gcloneShim
-
-# Batch shim for gloco
-$glocoShim = "@echo off`npython `"$installDir\git-loc.py`" gloco %*"
-Set-Content "$installDir\gloco.bat" $glocoShim
-
-# Add installDir to PATH if missing
-$oldPath = [Environment]::GetEnvironmentVariable("PATH", "User")
-if ($oldPath -notlike "*$installDir*") {
-    [Environment]::SetEnvironmentVariable("PATH", "$oldPath;$installDir", "User")
+# Add PowerShell aliases to user profile
+$profileFile = $PROFILE
+if (!(Test-Path $profileFile)) {
+    New-Item -ItemType File -Force -Path $profileFile
+}
+$aliases = @(
+    "Set-Alias gloco `"$installDir\gloco.bat`"",
+    "Set-Alias gclone `"$installDir\gclone.bat`"",
+    "Set-Alias git-loc `"$installDir\git-loc.bat`""
+)
+$content = Get-Content $profileFile -ErrorAction SilentlyContinue
+foreach ($alias in $aliases) {
+    if ($content -notcontains $alias) {
+        Add-Content $profileFile $alias
+    }
 }
 
-Write-Host "Git Location Changer installed with gclone and gloco. Restart terminal."
+# Check Python
+if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+    Write-Warning "Python is not on PATH. Add Python to PATH for gclone/gloco to work."
+}
+
+Write-Host "Git Location Changer installed with gclone and gloco. Restart terminal to use commands."
