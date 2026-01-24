@@ -2,9 +2,17 @@
 import os
 import sys
 import json
+import subprocess
 from pathlib import Path
+from argparse import ArgumentParser
 
-CONFIG_DIR = Path.home() / ".gitloc"
+def resolve_config_dir():
+    override = os.environ.get("GITLOC_DIR")
+    if override:
+        return Path(override).expanduser()
+    return Path.home() / ".gitloc"
+
+CONFIG_DIR = resolve_config_dir()
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
 def load_config():
@@ -16,12 +24,12 @@ def load_config():
 def save_config(cfg):
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     with open(CONFIG_FILE, "w") as f:
-        json.dump(cfg, f)
+        json.dump(cfg, f, indent=2)
 
 def cmd_set(path):
-    path = os.path.abspath(path)
-    save_config({"base_dir": path})
-    print(f"Git default directory set to: {path}")
+    base = os.path.abspath(os.path.expanduser(path))
+    save_config({"base_dir": base})
+    print(f"Default Git folder set to: {base}")
 
 def cmd_show():
     cfg = load_config()
@@ -31,49 +39,78 @@ def cmd_clone(repo):
     cfg = load_config()
     base = cfg.get("base_dir")
     if not base:
-        print("No default directory set. Use: git loc set <path>")
+        print("No default folder set. Run: gitloc set <path>")
         sys.exit(1)
     os.makedirs(base, exist_ok=True)
-    os.chdir(base)
-    os.system(f"git clone {repo}")
+    try:
+        subprocess.run(["git", "clone", repo], cwd=base, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"git clone failed with exit code {e.returncode}")
+        sys.exit(e.returncode or 1)
 
 def cmd_reset():
     if CONFIG_FILE.exists():
         CONFIG_FILE.unlink()
-        print("Git location reset")
+        print("Default Git folder cleared")
     else:
         print("No configuration found")
 
 def cmd_gloco():
-    """Show the current git location folder"""
     cfg = load_config()
     base = cfg.get("base_dir")
     if base:
-        print(f"Your current Git default folder is: {base}")
+        print(base)
     else:
-        print("No Git default folder is set. Use: git loc set <path>")
+        print("Not set")
+
+def dispatch_legacy(argv):
+    if not argv:
+        return None
+    action = argv[0].lower()
+    if action in ("gclone", "clone") and len(argv) > 1:
+        cmd_clone(argv[1])
+        return True
+    if action == "set" and len(argv) > 1:
+        cmd_set(argv[1])
+        return True
+    if action == "show":
+        cmd_show()
+        return True
+    if action == "reset":
+        cmd_reset()
+        return True
+    if action == "gloco":
+        cmd_gloco()
+        return True
+    return None
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: git loc [set|clone|gclone|show|reset|gloco]")
+    legacy = dispatch_legacy(sys.argv[1:])
+    if legacy:
         return
 
-    action = sys.argv[1].lower()
+    p = ArgumentParser(prog="gitloc")
+    sub = p.add_subparsers(dest="cmd", required=True)
 
-    if action == "set" and len(sys.argv) > 2:
-        cmd_set(sys.argv[2])
-    elif action == "clone" and len(sys.argv) > 2:
-        cmd_clone(sys.argv[2])
-    elif action == "gclone" and len(sys.argv) > 2:
-        cmd_clone(sys.argv[2])
-    elif action == "show":
+    p_set = sub.add_parser("set")
+    p_set.add_argument("path")
+
+    p_show = sub.add_parser("show")
+
+    p_clone = sub.add_parser("clone")
+    p_clone.add_argument("repo")
+
+    p_reset = sub.add_parser("reset")
+
+    args = p.parse_args()
+    if args.cmd == "set":
+        cmd_set(args.path)
+    elif args.cmd == "show":
         cmd_show()
-    elif action == "reset":
+    elif args.cmd == "clone":
+        cmd_clone(args.repo)
+    elif args.cmd == "reset":
         cmd_reset()
-    elif action == "gloco":
-        cmd_gloco()
-    else:
-        print("Unknown command or missing argument")
 
 if __name__ == "__main__":
     main()
