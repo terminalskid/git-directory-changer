@@ -5,6 +5,8 @@ import json
 import subprocess
 from pathlib import Path
 from argparse import ArgumentParser
+import re
+from urllib.parse import urlparse, urlunparse
 
 def resolve_config_dir():
     override = os.environ.get("GITLOC_DIR")
@@ -36,6 +38,7 @@ def cmd_show():
     print(cfg.get("base_dir", "Not set"))
 
 def cmd_clone(repo):
+    repo = normalize_repo_input(repo)
     cfg = load_config()
     base = cfg.get("base_dir")
     if not base:
@@ -62,6 +65,40 @@ def cmd_gloco():
         print(base)
     else:
         print("Not set")
+
+def normalize_repo_input(s: str) -> str:
+    raw = s.strip()
+    if not raw:
+        print("Missing repository argument. Example: gclone github.com/user/repo")
+        sys.exit(2)
+    if not looks_like_repo(raw):
+        print(f"Unrecognized repository format: {raw}")
+        print("Try: gclone github.com/user/repo or gclone https://host/user/repo.git")
+        sys.exit(2)
+    if "://" not in raw and ("@" in raw and ":" in raw):
+        return raw if raw.endswith(".git") else raw + ".git"
+    raw = re.sub(r"^(https?):/+", r"\1://", raw)
+    if not re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", raw):
+        raw = "https://" + raw
+    u = urlparse(raw)
+    if not u.netloc and u.path:
+        parts = u.path.split("/")
+        domain = parts[0]
+        rest = "/".join(parts[1:]) if len(parts) > 1 else ""
+        u = u._replace(netloc=domain, path=("/" + rest) if rest else "")
+    out = urlunparse(u)
+    if "?" not in out and "#" not in out and not out.endswith(".git"):
+        out = out + ".git"
+    return out
+
+def looks_like_repo(s: str) -> bool:
+    if "://" in s:
+        return True
+    if "@" in s and ":" in s:
+        return True
+    if "." in s and "/" in s:
+        return True
+    return False
 
 def dispatch_legacy(argv):
     if not argv:
