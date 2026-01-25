@@ -7,6 +7,7 @@ A small cross‑platform helper that clones all repositories into your preferred
 - Set a default folder for all Git repositories
 - Works on Windows (PowerShell) and Linux/macOS (bash/zsh)
 - Provides `gclone` and `gloco` convenience commands
+- Provides `gdc` menu with ASCII UI and docs shortcut
 - Persists across terminal sessions
 
 ## Install
@@ -55,6 +56,23 @@ git-loc set /path/to/folder
 
 ```
 git-loc reset
+
+- Launch the ASCII menu:
+
+```
+
+gdc
+
+```
+
+- Open docs directly:
+
+```
+
+git-loc docs
+
+```
+
 ```
 
 ## Notes

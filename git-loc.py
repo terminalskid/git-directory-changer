@@ -7,6 +7,9 @@ from pathlib import Path
 from argparse import ArgumentParser
 import re
 from urllib.parse import urlparse, urlunparse
+import webbrowser
+
+DOCS_URL = "https://gdc-docs.vercel.app/"
 
 def resolve_config_dir():
     override = os.environ.get("GITLOC_DIR")
@@ -66,6 +69,10 @@ def cmd_gloco():
     else:
         print("Not set")
 
+def cmd_docs():
+    webbrowser.open(DOCS_URL)
+    print("Opening docs...")
+
 def normalize_repo_input(s: str) -> str:
     raw = s.strip()
     if not raw:
@@ -102,7 +109,8 @@ def looks_like_repo(s: str) -> bool:
 
 def dispatch_legacy(argv):
     if not argv:
-        return None
+        run_menu()
+        return True
     action = argv[0].lower()
     if action in ("gclone", "clone") and len(argv) > 1:
         cmd_clone(argv[1])
@@ -119,7 +127,45 @@ def dispatch_legacy(argv):
     if action == "gloco":
         cmd_gloco()
         return True
+    if action == "menu":
+        run_menu()
+        return True
+    if action == "docs":
+        cmd_docs()
+        return True
     return None
+
+def run_menu():
+    while True:
+        print("")
+        print("###############################")
+        print("#  Git Location Changer (GDC) #")
+        print("###############################")
+        print("1) Set default folder")
+        print("2) Clone repository")
+        print("3) Show default folder")
+        print("4) Reset configuration")
+        print("5) Open docs")
+        print("6) Exit")
+        choice = input("Select an option [1-6]: ").strip()
+        if choice == "1":
+            path = input("Enter folder path: ").strip()
+            if path:
+                cmd_set(path)
+        elif choice == "2":
+            repo = input("Enter repo (e.g. github.com/user/repo): ").strip()
+            if repo:
+                cmd_clone(repo)
+        elif choice == "3":
+            cmd_gloco()
+        elif choice == "4":
+            cmd_reset()
+        elif choice == "5":
+            cmd_docs()
+        elif choice == "6":
+            break
+        else:
+            print("Invalid selection")
 
 def main():
     legacy = dispatch_legacy(sys.argv[1:])
@@ -138,6 +184,8 @@ def main():
     p_clone.add_argument("repo")
 
     p_reset = sub.add_parser("reset")
+    sub.add_parser("menu")
+    sub.add_parser("docs")
 
     args = p.parse_args()
     if args.cmd == "set":
@@ -148,6 +196,10 @@ def main():
         cmd_clone(args.repo)
     elif args.cmd == "reset":
         cmd_reset()
+    elif args.cmd == "menu":
+        run_menu()
+    elif args.cmd == "docs":
+        cmd_docs()
 
 if __name__ == "__main__":
     main()
